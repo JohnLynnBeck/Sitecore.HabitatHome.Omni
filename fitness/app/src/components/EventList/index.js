@@ -6,6 +6,9 @@ import { Text } from "@sitecore-jss/sitecore-jss-react";
 import withSizes from "react-sizes";
 import EventItemLoader from "../EventItemLoader";
 
+import ApolloClient from 'apollo-boost';
+import gql from 'graphql-tag';
+
 const parseNumericValue = (value, defaultValue) => {
   let parsed;
   if (value) {
@@ -46,6 +49,41 @@ class EventList extends React.Component {
   scrollToBottom = () => {
     this.loadMore.scrollIntoView({ behavior: "smooth" });
   };
+
+  componentWillMount() {
+    const client = new ApolloClient({
+      uri: 'http://localhost:3000/sitecore/api/graph/items/master?sc_apikey={3070EA0E-52E7-4890-A11C-EB77B113B007}'
+    });
+
+    client.query({
+      query: gql`
+        {  
+          search(fieldsEqual:[
+            {name:"_fullpath", value:"/sitecore/content/habitatfitness/home/events*" },
+            {name:"_templatename", value:"event-page" }
+          ]) {    
+            results {
+              totalCount
+              events: items {
+                name        
+                displayName: field(name: "__display_name")
+                description: field(name: "description") 
+                image: field(name: "image") 
+                longitude: field(name: "longitude") 
+                latitude: field(name: "latitude") 
+                language: field(name: "language") 
+              }
+            }
+          }
+        }      
+      `,
+    })
+      .then((data) => {
+        //TODO: Do something with the data
+        console.log(data);
+      })
+      .catch(error => console.error(error));
+  }
 
   componentDidMount() {
     const { take, skip, personalize } = this.state;
